@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>🚀Rocket Typer⚡</title>
+  <link rel="shortcut icon" type="image/x-icon" href="rocket.png"/>
+  <meta name='viewport' content='width=device-width,initial-scale=1'>
+  <style>
+    .btn {
+      background-color: #009688;
+    }
+    .btn:hover {
+      background: #000000;
+    }
+    .fw7 {
+      font-weight: 700;
+    }
+    .progressBar {
+      width: 20px;
+      bottom: 0;
+      background-color: red;
+      margin-top: .5rem;
+    }
+    .dn {display: none;}
+    .db {display: block;}
+  </style>
+</head>
+<body>
+  <div style='text-align: center; margin: 0 auto; max-width: 50em;'>
+    <h1><img src='logo.png' style='width: 100%;'></h1>
+    <div id='countdown' class='fw7' style='font-size: 10rem; position: absolute; bottom: 0px; left: 0px; right: 0px; top: 0px; text-align: center; background-color: #9e9e9e29;'>
+      <div style='display: table; width: 100%; height: 100%;'>
+        <div id='countdowntime' style='display: table-cell; vertical-align: middle;'>
+          3
+        </div>
+      </div>
+    </div>
+    <div id='status' class='fw7'>
+
+    </div>
+    <div id='words'></div>
+    <button id='start' class='btn' style='padding: .5rem 1rem .5rem 1rem; color: #fff; border: 0; border-radius: .5rem;  margin-left: auto; margin-right: auto; font-size: 1.5rem; margin-top: 1rem;'>Start</button>
+    <div id='progressBar1' class='progressBar dn' style='background-color: #eb4340; color: #fffff;'>0%;</div>
+  </div>
+  <script>
+    function sample(arr) {
+      return arr[Math.random() *  arr.length | 0];
+    }
+
+    window.onload = () => {
+      let startButton = document.getElementById('start');
+      let wordsDiv = document.getElementById('words');
+      let statusDiv = document.getElementById('status');
+      let countdownDiv = document.getElementById('countdown');
+      let countdownTimeDiv = document.getElementById('countdowntime');
+      let progressBar1Div = document.getElementById('progressBar1');
+      let start = null;
+      let typed = "";
+      let wordOptions = [
+        "the ancient citadel at Athens, containing the Parthenon and other notable buildings, mostly dating from the 5th century BC.",
+        "the ship built by Noah to save his family and two of every kind of animal from the Flood; Noah's ark.",
+    ];
+      let index = 0;
+      let playing = false;
+      let mistakes = 0;
+      let lettersTyped = 0;
+      let clockHandler = null;
+      let words = "";
+      let countdownHandler = null;
+      let INITIAL_COUNTDOWN_TIME = 3;
+      let countdownTime = INITIAL_COUNTDOWN_TIME;
+      let progress = 0;
+      let wordCount = null;
+
+      countdownDiv.style.display = 'none';
+
+      function startGame() {
+        playing = true;
+        clearInterval(countdownHandler);
+        progress = 0;
+        countdownDiv.style.display = 'none';
+        startButton.style.display = 'none';
+        progressBar1Div.style.display = 'block';
+        countdownTimeDiv.innerText = INITIAL_COUNTDOWN_TIME;
+        countdownTime = INITIAL_COUNTDOWN_TIME;
+        start = new Date();
+        words = sample(wordOptions);
+        wordCount = words.split(/\s+/).length;
+        wordsDiv.innerHTML = words;
+        statusDiv.innerHTML = "";
+        let clockDiv = document.createElement('div');
+        clockDiv.innerHTML = "0s";
+        statusDiv.appendChild(clockDiv);
+        clockHandler = setInterval(() => {
+          clockDiv.innerHTML = `${(new Date() - start) / 1000 | 0}s`;
+        }, 1000);
+      }
+
+      startButton.onclick = () => {
+        countdownDiv.style.display = 'block';
+        countdownHandler = setInterval(() => {
+          --countdownTime;
+          if(countdownTime <= 0) {
+            startGame();
+          } else {
+            // debugger
+            console.log(countdownTime.toString());
+            countdownTimeDiv.innerText = countdownTime.toString();
+          }
+        }, 1000);
+      }
+
+      document.body.onkeydown = (e) => {
+        if(!playing) return;
+        if(e.keyCode === 16) return;
+        let correct = false;
+        if(e.key === words[index]){
+          ++index;
+          ++lettersTyped;
+          progress = (lettersTyped / words.length) * 100 | 0;
+          progressBar1Div.innerText = progress + "%";
+          progressBar1Div.style.width = progress + "%";
+          correct = true;
+        } else {
+          ++mistakes;
+        }
+        wordsDiv.innerHTML = `<span style='color: #009688;'>${words.substring(0, index)}</span>${!correct ? `<span style='color: black; background: red;'>${words.substr(index, 1)}</span>` : ''}${words.substring(correct ? index : index + 1, words.length)}`
+        if(index >= words.length) {
+          clearInterval(clockHandler);
+          index = 0;
+          let accuracy = ((lettersTyped - mistakes) / lettersTyped) * 100 | 0;
+          let time = new Date() - start;
+          let wpm = (wordCount / time) * 60000 | 0;
+          progressBar1Div.innerText =  "100%";
+
+          startButton.style.display = 'block';
+          statusDiv.innerHTML = `<h2>Finished!</h2>It took ${time / 1000}s</br>${wordCount} words typed</br>WPM: ${wpm}</br>Accuracy: ${accuracy}%</br>Mistakes: ${mistakes}`;
+          playing = false;
+        }
+      }
+    }
+  </script>
+</body>
+</html>
