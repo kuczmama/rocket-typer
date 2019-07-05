@@ -41,7 +41,7 @@
 
     </div>
     <div id='words'></div>
-    <button id='start' class='btn' style='padding: .5rem 1rem .5rem 1rem; color: #fff; border: 0; border-radius: .5rem;  margin-left: auto; margin-right: auto; font-size: 1.5rem; margin-top: 1rem;'>Start</button>
+    <button id='start' class='btn' autofocus style='padding: .5rem 1rem .5rem 1rem; color: #fff; border: 0; border-radius: .5rem;  margin-left: auto; margin-right: auto; font-size: 1.5rem; margin-top: 1rem;'>Start</button>
     <div id='levelContainer' class='fw7'></div>
     </div>
     <div id='player'>
@@ -59,6 +59,10 @@
 
     function sample(arr) {
       return arr[Math.random() *  arr.length | 0];
+    }
+
+    function isHidden(el) {
+      return (el.offsetParent === null)
     }
 
     window.onload = () => {
@@ -154,8 +158,6 @@
         countdownTimeDiv.innerText = INITIAL_COUNTDOWN_TIME;
         countdownTime = INITIAL_COUNTDOWN_TIME;
         start = new Date();
-        words = sample(wordOptions);
-        // wordCount = words.split(/\s+/).length;
         wordCount = words.length / 5;
         wordsDiv.innerHTML = words;
         statusDiv.innerHTML = "";
@@ -184,12 +186,14 @@
 
       startButton.onclick = () => {
         countdownDiv.style.display = 'block';
+        words = sample(wordOptions);
         countdownHandler = setInterval(() => {
           --countdownTime;
           if(countdownTime <= 0) {
             startGame();
           } else {
             console.log(countdownTime.toString());
+            wordsDiv.innerHTML = words; // preview words
             countdownTimeDiv.innerText = countdownTime.toString();
           }
         }, 1000);
@@ -198,6 +202,10 @@
       document.body.onkeydown = (e) => {
         if(!playing) return;
         if(e.keyCode === 16) return;
+        if(e.keyCode === 13 && !isHidden(startButton)) {
+          startButton.click();
+          return;
+        }
         let correct = false;
         if(e.key === words[index]){
           ++index;
@@ -214,6 +222,7 @@
           clearInterval(clockHandler);
           let place = bots.filter((b) => b.progress >= 100).length + 1;
           let message = "Finished!";
+          startButton.focus();
           if(place === 1) {
             winCount++;
             window.localStorage.setItem('winCount', winCount);
