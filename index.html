@@ -14,14 +14,17 @@
     .fw7 {
       font-weight: 700;
     }
-    .progressBar {
-      width: 20px;
-      bottom: 0;
-      background-color: red;
-      margin-top: .5rem;
-    }
+    .mt1 {margin-top: .5rem;}
     .dn {display: none;}
     .db {display: block;}
+    .dib {display: inline-block;}
+    .w-90 {width: 90%;}
+    .w-80 {width: 80%;}
+    .w-70 {width: 70%;}
+    .w-25 {width: 25%;}
+    .w-20 {width: 20%;}
+    .w-10 {width: 10%;}
+    .w-0 {width: 0%;}
   </style>
 </head>
 <body>
@@ -39,9 +42,21 @@
     </div>
     <div id='words'></div>
     <button id='start' class='btn' style='padding: .5rem 1rem .5rem 1rem; color: #fff; border: 0; border-radius: .5rem;  margin-left: auto; margin-right: auto; font-size: 1.5rem; margin-top: 1rem;'>Start</button>
-    <div id='progressBar1' class='progressBar dn' style='background-color: #eb4340; color: #fffff;'>0%;</div>
+    <div id='levelContainer' class='fw7'></div>
+    </div>
+    <div id='player'>
+
+    </div>
+    <div id='bots'>
+    </div>
   </div>
   <script>
+    function randomName() {
+      let first = ["smiggle", "speedy","awesome", "fast", "purple", "yummy", "squishy", "fat", "gordo"];
+      let last = ["racer", "computer", "bot", "person", "winner", "guy", "thing"];
+      return `${sample(first)}${sample(last)}`
+    }
+
     function sample(arr) {
       return arr[Math.random() *  arr.length | 0];
     }
@@ -52,12 +67,25 @@
       let statusDiv = document.getElementById('status');
       let countdownDiv = document.getElementById('countdown');
       let countdownTimeDiv = document.getElementById('countdowntime');
-      let progressBar1Div = document.getElementById('progressBar1');
+      let botBars = document.getElementById('bots');
+      let levelContainer = document.getElementById('levelContainer');
+      let level = Number(window.localStorage.getItem('level')) || 1;
+      let winCount = Number(window.localStorage.getItem('winCount')) || 0;
+      let loseCount = Number(window.localStorage.getItem('loseCount')) || 0;
+      if(level != "number") window.localStorage.setItem('level', 1);
+      if(winCount != "number") window.localStorage.setItem('winCount', 0);
+      if(loseCount != "number") window.localStorage.setItem('loseCount', 0);
+
+      levelContainer.innerHTML = `Level: ${level}`;
+
       let start = null;
       let typed = "";
       let wordOptions = [
-        "the ancient citadel at Athens, containing the Parthenon and other notable buildings, mostly dating from the 5th century BC.",
-        "the ship built by Noah to save his family and two of every kind of animal from the Flood; Noah's ark.",
+        "The Ark was the ship built by Noah to save his family and two of every kind of animal from the Flood; Noah's ark.",
+        "A family is a group consisting of parents and children living together in a household",
+        "Fat is a natural oily or greasy substance occurring in animal bodies, especially when deposited as a layer under the skin or around certain organs.",
+        "A hiatus is a pause or gap in a sequence, series, or process",
+        "a b c d e f g h i j k l m n o p q r s t u v w x y z"
     ];
       let index = 0;
       let playing = false;
@@ -70,29 +98,88 @@
       let countdownTime = INITIAL_COUNTDOWN_TIME;
       let progress = 0;
       let wordCount = null;
+      let botUpdateHandlers = [];
+      let numBots = 3;
+      let bots = [];
 
       countdownDiv.style.display = 'none';
+
+      function randomColor() {
+        return `rgb(${Math.random() * 255 | 0}, ${Math.random() * 255 | 0}, ${Math.random() * 255 | 0})`;
+      }
+
+      function generateProgressBar(name) {
+        let container = document.createElement('div');
+        let nameDiv = document.createElement('div');
+        nameDiv.classList += 'w-20 dib mt1';
+        nameDiv.innerText = name
+        container.appendChild(nameDiv);
+        let barContainer = document.createElement('div');
+        barContainer.classList += 'w-70 dib';
+        let bar = document.createElement('div');
+        bar.style.backgroundColor = randomColor();
+        bar.classList += 'w-0';
+        bar.innerText = '0%';
+        barContainer.appendChild(bar);
+        container.appendChild(barContainer);
+        return {container, bar};
+      }
+
+      function generateBotBar() {
+        let name = randomName();
+
+        ({container, bar} = generateProgressBar(randomName()));
+        bots.push({name: name, progress: 0, container: container, bar: bar});
+        botBars.appendChild(container);
+        botUpdateHandlers.push(setInterval(() => {
+          let bot = sample(bots);
+          if(bot.progress < 100) {
+            bot.progress += 1;
+            bot.bar.style.width = bot.progress + "%";
+            bot.bar.innerText = bot.progress + "%";
+          }
+        }, 1000 * (words.length/100) * (100 / (level * 50))));
+      }
 
       function startGame() {
         playing = true;
         clearInterval(countdownHandler);
+        botUpdateHandlers.map((handler) => clearInterval(handler));
         progress = 0;
         countdownDiv.style.display = 'none';
         startButton.style.display = 'none';
-        progressBar1Div.style.display = 'block';
+        lettersTyped = 0;
+        mistakes = 0;
+
         countdownTimeDiv.innerText = INITIAL_COUNTDOWN_TIME;
         countdownTime = INITIAL_COUNTDOWN_TIME;
         start = new Date();
         words = sample(wordOptions);
-        wordCount = words.split(/\s+/).length;
+        // wordCount = words.split(/\s+/).length;
+        wordCount = words.length / 5;
         wordsDiv.innerHTML = words;
         statusDiv.innerHTML = "";
         let clockDiv = document.createElement('div');
         clockDiv.innerHTML = "0s";
         statusDiv.appendChild(clockDiv);
+
         clockHandler = setInterval(() => {
           clockDiv.innerHTML = `${(new Date() - start) / 1000 | 0}s`;
         }, 1000);
+        let botIndex = -1;
+        botUpdateHandlers = [];
+        bots = [];
+        botBars.innerHTML = "";
+        ({container, bar} = generateProgressBar("You🚀"));
+        playerProgressBarContainer = document.getElementById('player');
+        playerProgressBarContainer.innerHTML = "";
+        playerProgressBarContainer.appendChild(container);
+        playerProgressBar = bar;
+
+
+        for(let i = 0; i < numBots; i++) {
+          generateBotBar();
+        }
       }
 
       startButton.onclick = () => {
@@ -102,7 +189,6 @@
           if(countdownTime <= 0) {
             startGame();
           } else {
-            // debugger
             console.log(countdownTime.toString());
             countdownTimeDiv.innerText = countdownTime.toString();
           }
@@ -117,8 +203,8 @@
           ++index;
           ++lettersTyped;
           progress = (lettersTyped / words.length) * 100 | 0;
-          progressBar1Div.innerText = progress + "%";
-          progressBar1Div.style.width = progress + "%";
+          playerProgressBar.innerText = progress + "%";
+          playerProgressBar.style.width = progress + "%";
           correct = true;
         } else {
           ++mistakes;
@@ -126,14 +212,47 @@
         wordsDiv.innerHTML = `<span style='color: #009688;'>${words.substring(0, index)}</span>${!correct ? `<span style='color: black; background: red;'>${words.substr(index, 1)}</span>` : ''}${words.substring(correct ? index : index + 1, words.length)}`
         if(index >= words.length) {
           clearInterval(clockHandler);
+          let place = bots.filter((b) => b.progress >= 100).length + 1;
+          let message = "Finished!";
+          if(place === 1) {
+            winCount++;
+            window.localStorage.setItem('winCount', winCount);
+          } else {
+            loseCount++;
+            window.localStorage.setItem('loseCount', loseCount);
+          }
+
+          switch (place) {
+            case 1:
+              message = "Success!! You got 1st place!";
+              level++;
+              window.localStorage.setItem('level', level);
+              levelContainer.innerHTML = `Level: ${level}`;
+              break;
+            case 2:
+              message = "You got 2nd place";
+              break;
+            case 3:
+            message = "You got 3rd place";
+            break;
+            default:
+          }
           index = 0;
           let accuracy = ((lettersTyped - mistakes) / lettersTyped) * 100 | 0;
           let time = new Date() - start;
           let wpm = (wordCount / time) * 60000 | 0;
-          progressBar1Div.innerText =  "100%";
+          playerProgressBar.innerText =  "100%";
 
           startButton.style.display = 'block';
-          statusDiv.innerHTML = `<h2>Finished!</h2>It took ${time / 1000}s</br>${wordCount} words typed</br>WPM: ${wpm}</br>Accuracy: ${accuracy}%</br>Mistakes: ${mistakes}`;
+          statusDiv.innerHTML = `
+            <h2>${message}</h2>
+            It took ${time / 1000}s</br>
+            ${wordCount} words typed</br>
+            WPM: ${wpm}</br>
+            Accuracy: ${accuracy}%</br>
+            Mistakes: ${mistakes}</br>
+            Win Ratio: ${winCount}/${(winCount + loseCount)}</br>
+            `;
           playing = false;
         }
       }
